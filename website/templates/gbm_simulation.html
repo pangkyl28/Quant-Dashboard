@@ -1,0 +1,52 @@
+{% extends "base.html" %}
+
+{% block title %}GBM Simulation{% endblock %}
+
+{% block content %}
+        <h1 align="center">Welcome to the GBM Simulator, {{ user.first_name }}!</h1>
+        <br/>
+        <p align="center">Use this tool to simulate Geometric Brownian Motion for stock prices.</p>
+        <br/>
+        <form method="POST">    
+            <div class="form-group">
+                <label for="selected_stock">Select Stock</label>
+                <select class="form-control" id="selected_stock" name="selected_stock">
+                    <option>AAPL</option>
+                    <option>MSFT</option>
+                    <option>GOOGL</option>
+                    <option>AMZN</option>
+                    <option>META</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label for="time_horizon">Time Horizon (in days)</label>
+                <input 
+                    type="number" 
+                    class="form-control"
+                    id="time_horizon" 
+                    name="time_horizon" 
+                    placeholder="Enter time horizon"
+                />
+            </div>
+            <div class="form-group">
+                <label for="num_simulations">Number of Simulations</label>
+                <input 
+                    type="number" 
+                    class="form-control"
+                    id="num_simulations" 
+                    name="num_simulations" 
+                    placeholder="Enter number of simulations"
+                />
+            </div>
+            <button align="center" type="submit" class="btn btn-primary">Simulate</button>
+        </form>
+
+        <br/>
+        {% if results is not none and not results.empty %}
+            <h3 align="center">Simulation Results</h3>
+            <div align="center">
+                <p>FILL IN LATER</p>
+                <pre>{{ results }}</pre>
+            </div>
+        {% endif %}
+{% endblock %}
