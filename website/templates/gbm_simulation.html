@@ -42,11 +42,129 @@
         </form>
 
         <br/>
-        {% if results is not none and not results.empty %}
+        <!-- return render_template("gbm_simulation.html", user=current_user, has_results=has_results, days=days, paths=paths, path_keys=path_keys, terminal=terminal, error=error) -->
+        {% if has_results %}
+            <script src="https://cdn.plot.ly/plotly-2.30.0.min.js"></script>
             <h3 align="center">Simulation Results</h3>
-            <div align="center">
-                <p>FILL IN LATER</p>
-                <pre>{{ results }}</pre>
+
+            <!-- Controls -->
+            <div class="form-row" style="display:flex; gap:12px; flex-wrap:wrap; justify-content:center;">
+                <label>
+                    View:
+                    <select id="viewMode" class="form-control">
+                        <option value="single">Single Path</option>
+                        <option value="all">All Paths</option>
+                        <option value="hist">Terminal Distribution</option>
+                    </select>
+                </label>
+                <label id="singlePathWrap">
+                    Path:
+                    <select id="pathSelect" class="form-control">
+                        {% for k in path_keys %}
+                            <option value="{{ k }}">{{ k }}</option>
+                        {% endfor %}
+                    </select>
+                </label>
+                <label id="allPathsWrap" style="display:none;">
+                    Show first N paths:
+                    <input type="number" id="nPaths" class="form-control" value="1" min="1" max="{{ path_keys|length }}"/>
+                </label>
+                <br/><br/>
+            </div>
+            
+            <!-- Graph -->
+             <div id="plot" style="height:480px; margin-top:16px;"></div>
+
+            <!-- Data from Flask -->
+            <script>
+                const DAYS = {{ days|tojson }};
+                const PATHS = {{ paths|tojson }};
+                const PATH_KEYS = {{ path_keys|tojson }};
+                const TERMINAL = {{ terminal|tojson }};
+
+                console.log("DAYS:", DAYS);
+                console.log("PATHS:", PATHS);
+                console.log("PATH_KEYS:", PATH_KEYS);
+                console.log("TERMINAL:", TERMINAL);
+
+                const viewMode = document.getElementById("viewMode");
+                const singlePathWrap = document.getElementById("singlePathWrap");
+                const allPathsWrap = document.getElementById("allPathsWrap");
+                const nPaths = document.getElementById("nPaths");
+
+
+
+                function setControls() {
+                    if (viewMode.value === "single") {
+                        singlePathWrap.style.display = "block";
+                        allPathsWrap.style.display = "none";
+                    } else if (viewMode.value === "all") {
+                        singlePathWrap.style.display = "none";
+                        allPathsWrap.style.display = "block";
+                    } else {
+                        singlePathWrap.style.display = "none";
+                        allPathsWrap.style.display = "none";
+                    }
+                }
+                function render() {
+                    const mode = viewMode.value;
+                    const plotDiv = document.getElementById("plot");
+                    plotDiv.innerHTML = "";  // Clear previous plot
+
+                    if (mode === "single") {
+                        const selectedPath = pathSelect.value;
+                        // Render the graph for the selected single path
+                        Plotly.newPlot(plotDiv, [{
+                            x: DAYS,
+                            y: PATHS[selectedPath],
+                            type: "scatter"
+                        }]);
+
+                    } else if (mode === "all") {
+                        const n = parseInt(nPaths.value, 10);
+                        // Render the graph for the first N 
+                        const traces = PATH_KEYS.slice(0, n).map(key => ({
+                            x: DAYS,
+                            y: PATHS[key],
+                            type: "scatter",
+                            name: key
+                        }));
+                        Plotly.newPlot(plotDiv, traces, { title:`First ${n} Paths`, xaxis:{title:"Day"}, yaxis:{title:"Price"}, showlegend:false });
+                    } else if (mode === "hist") {
+                        // Render the terminal distribution graph
+                        Plotly.newPlot(plotDiv, [{
+                            x: TERMINAL,      // 1-D array of numbers
+                            type: "histogram",
+                            nbinsx: 50        // optional: number of bins
+                        }], {
+                            title: "Terminal Price Distribution",
+                            xaxis: { title: "Final Price" },
+                            yaxis: { title: "Count" }
+                        });
+                    }
+                }
+
+                viewMode.addEventListener("change", () => {setControls(); render(); });
+                document.getElementById("pathSelect").addEventListener("change", render);
+                document.getElementById("nPaths").addEventListener("change", render);
+                setControls();
+                render();
+
+            </script>
+
+
+            <div align="center" style="display:none;">
+                <p>Debugging - Remove the style display none to debug data</p>
+                <pre>{{ has_results }}</pre>
+                <br/>
+                <pre>days = {{ days }}</pre>
+                <br/>
+                <pre>paths = {{ paths }}</pre>
+                <br/>
+                <pre>path_keys = {{ path_keys }}</pre>
+                <br/>
+                <pre>terminal = {{ terminal }}</pre>
+                <br/>
             </div>
         {% endif %}
 {% endblock %}

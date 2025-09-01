@@ -28,17 +28,33 @@ def home():
 @views.route('/gbm_simulation', methods=['GET', 'POST'])
 @login_required
 def gbm_simulation():
-    results = None
+    has_results = False
+    days = []
+    paths = {}
+    path_keys = []
+    terminal = []
+    error = None
     if request.method == 'POST':
-        selected_stock = request.form.get('selected_stock')
-        time_horizon = int(request.form.get('time_horizon'))
-        num_simulations = int(request.form.get('num_simulations'))
-        if (time_horizon <= 0) or (num_simulations <= 0):
-            flash("Invalid input!", category='error')
-        else:
-            results = run_gbm_simulation(selected_stock, time_horizon, num_simulations)
-            
-    return render_template("gbm_simulation.html", user=current_user, results=results)
+        try:
+            selected_stock = request.form.get('selected_stock')
+            time_horizon = int(request.form.get('time_horizon'))
+            num_simulations = int(request.form.get('num_simulations'))
+            if (time_horizon <= 0) or (num_simulations <= 0):
+                flash("Invalid input!", category='error')
+            else:
+                # rows = day 0..N, cols = path_1..path_M
+                results = run_gbm_simulation(selected_stock, time_horizon, num_simulations)
+                has_results = bool(results is not None and not results.empty)
+                if has_results:
+                    days = results.index.tolist()
+                    paths = results.to_dict(orient='list')
+                    path_keys = list(paths.keys())
+                    terminal = results.iloc[-1].tolist()
+        except Exception as e:
+            flash("Error Occurred", category='error')
+            error = str(e)
+
+    return render_template("gbm_simulation.html", user=current_user, has_results=has_results, days=days, paths=paths, path_keys=path_keys, terminal=terminal, error=error)
 
 
 @views.route('/delete-note', methods=['POST'])
